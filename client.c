@@ -14,6 +14,7 @@ FILE* boardFile;
 FILE* missileFile;
 int width, height;
 char** board;
+char* shipNames[MAX_SHIPS];
 
 // ran out of time so I couldn't do the missiles or colors
 
@@ -53,37 +54,61 @@ enum missileType getNextMissileFromFile() {
 
 // gets the ships from the boardFile and fills the ships array. What ships array you say? Well, TODO organize the functions so that they go in a clean order, as shown in Robert C. Martins book Clean Code
 
-int fillShips(int* ships[MAX_SHIPS]) { // I can't remember if output parameters are bad...
-	//TODO
+// fills the ships array, and shipnames array. Also, if a ship is under 12 units, it sets the hitStatus to one, as the remaining spots cant be hit.
+// The remaining x and y coordinates will be set to -1.
+int fillShips(int*** ships, int shipNames[MAX_SHIPS]) { // I can't remember if output parameters are bad...
+	// file already opened by main()
+	scanf("%d,%d\n", &width, &height);
+	static char head[2];
+	static char direction;
+	static int length;
+	static char* name;
 
+	while(true) {
+		direction = head[0] = head[1] = ' ';
+		length = 0;
+		name = " ";
+		//scanf("%c%c %c %d %s\n", &(head[0]), &(head[1]), &direction, &length, name);
+		//printf("%c%c %c %d %s\n", head[0], head[1], direction, length, name);
+	}
+
+
+
+	if (!(width >= 1 && width <= 12)) {
+		printf("Invalid board configuration file!"); client_quit();
+	}
+	if (!(height >= 1 && height <= 12)) {
+		printf("Invalid board configuration file!");
+		client_quit();
+	}
+
+
+
+	fclose(boardFile);
 }
 // getNextMissileFromFile() and fillShips() should probably be in a different file called configreader.c or something. If this was C++ everything would also be an object...
-
 
 /* I have chosen to use a "client-server" approach to this. It would be easy to expand to multiplayer, and it also keeps
    the actual logic of hit-checking and other stuff separate from the terminal user interface. I am more used to programming
    in OO languages, but I think this is still a good way to go about the game */
 int main(/*TODO*/) {
-	//{ // initializes the server from the configuration files
-	//	{ // read board config
-	//		boardFile = fopen(arg0, 'r');
-	//		width = getBoardWidth();
-	//		height = getBoardHeight();
-			width = 10;
-			height = 10;
-	//		if (!(width >= 1 && width <= 12)) { printf("Invalid board configuration file!"; client_quit(); }
-	//		if (!(height >= 1 && height <= 12)) { printf("Invalid board configuration file!"; client_quit(); }
+	{ // initializes the server from the configuration files
+		//{
+			// read board config
+			char* file = "board.txt";
+			boardFile = fopen(file, 'r');
 
 
 			int ships[MAX_SHIPS][12][3];
 			/*array of ships with the x and y of each block of the ship also if its hit (TODO use a byte long int).
 			  I though of using max(width, height) instead of 12, but I would have to malloc() it, and that would be way
 			  too much trouble.*/
-			int shipNames[MAX_SHIPS]; //TODO these two should be just pointers, and fillShips() would determine their length and return it.
+			//TODO this and ShipNames should be just pointers, and fillShips() would determine their length and return it.
 
 			int numOfShips = fillShips(ships, shipNames);
-	//		fclose(boardFile);
-	//	}
+			client_quit();
+			//TODO if I'm gonna remake this in C++, I should use dependancy injection so server.setShips(ships)
+		//}
 	//	{ // read missile file
 	//		missileFile = fopen(arg1, 'r');
 	//		missileType currentMissile;
@@ -94,8 +119,8 @@ int main(/*TODO*/) {
 	//		fclose(missileFile);
 	//	}
 
-		server_initialize(nullptr, ships, numOfShips, width, height);
-	//}
+		server_initialize(NULL, ships, numOfShips, width, height);
+	}
 
 
 	// I guess we have to set up some parts of the client, too
@@ -148,9 +173,9 @@ void client_playGame() {
 				board[attackColumn][attackRow] = '0';
 			} if (result >= 0) {
 				board[attackColumn][attackRow] = 'S'; // S for sunk
-				printf(" SHIP %s HAS BEEN SUNK", shipNames[result];
+				printf(" SHIP %s HAS BEEN SUNK", shipNames[result]);
 			} else {
-				board[attackColumn][attackRow] = 'X';
+				board[attackColumn][attackRow] = 'X';
 			}
 		}
 

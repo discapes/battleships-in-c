@@ -1,0 +1,4 @@
+9,7
+D4 E 3 shipone
+A1 N 3 shiptwo
+C2 W 2 shipthree
