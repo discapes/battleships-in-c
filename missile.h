@@ -1,8 +1,8 @@
+#ifndef MISSILES_H
+#define MISSILES_H
 enum missileType { SINGLE, VLINE, HLINE, SPLASH, MISSILE_EOF };
-
-// didnt have time, sorry
-
 struct missile {
-    char* name;
+    enum missileType type;
     struct missile* next;
 };
+#endif

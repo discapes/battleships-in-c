@@ -1,179 +1,40 @@
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <ctype.h>
 #include <string.h>
 
-#define MAX_SHIPS 10
-
 #include "server.h"
-#include "missiles.h"
+#include "client.h"
+#include "configuration.h"
 
-FILE* boardFile;
-FILE* missileFile;
-int width, height;
-char** board;
-char* shipNames[MAX_SHIPS];
+char** board; /* board that will be printed */
 
-// ran out of time so I couldn't do the missiles or colors
-
-enum menuOption { EXIT, PLAY, MISSILES, INVALID};
-
-// forward declarations (I like to use header files only for the parts that are actually used by otherfiles,
-// as to not expose the private implementation (like Java I guess). I don't really need a header file for the client...
-void client_playGame();
-enum menuOption mainMenu();
+/* Forward declarations */
+int client_width, client_height;
+char alphabet[26];
+void printColorCode(char mark);
 int colToInt(char letter);
 int rowToInt(char digit);
 
-/* Closes everything up */
-void client_quit() {
-	for (int col = 0; col < width; col++)
-		free(board[col]);
-	free(board);
-	exit(0);
-}
-
-/* does what it says on the tin */
-enum missileType getNextMissileFromFile() {
-	static char line[7];
-	fgets(line, 7, missileFile);
-	for(int i = 0; i < 6; i++)
-		line[i] = tolower(line[i]);
-	if (strcmp(line, "single\n") == 0) return SINGLE;
-	else if (strcmp(line, "splash\n") == 0) return SPLASH;
-	else if (strcmp(line, "v-line\n") == 0) return VLINE;
-	else if (strcmp(line, "h-line\n") == 0) return HLINE;
-	else if (strcmp(line, "") == 0) return MISSILE_EOF;
-	else {
-		printf("Invalid missile configuration file!");
-		client_quit();
-	}
-}
-
-// gets the ships from the boardFile and fills the ships array. What ships array you say? Well, TODO organize the functions so that they go in a clean order, as shown in Robert C. Martins book Clean Code
-
-// fills the ships array, and shipnames array. Also, if a ship is under 12 units, it sets the hitStatus to one, as the remaining spots cant be hit.
-// The remaining x and y coordinates will be set to -1.
-int fillShips(int*** ships, int shipNames[MAX_SHIPS]) { // I can't remember if output parameters are bad...
-	// file already opened by main()
-	scanf("%d,%d\n", &width, &height);
-	static char head[2];
-	static char direction;
-	static int length;
-	static char* name;
-
-	while(true) {
-		direction = head[0] = head[1] = ' ';
-		length = 0;
-		name = " ";
-		//scanf("%c%c %c %d %s\n", &(head[0]), &(head[1]), &direction, &length, name);
-		//printf("%c%c %c %d %s\n", head[0], head[1], direction, length, name);
-	}
-
-
-
-	if (!(width >= 1 && width <= 12)) {
-		printf("Invalid board configuration file!"); client_quit();
-	}
-	if (!(height >= 1 && height <= 12)) {
-		printf("Invalid board configuration file!");
-		client_quit();
-	}
-
-
-
-	fclose(boardFile);
-}
-// getNextMissileFromFile() and fillShips() should probably be in a different file called configreader.c or something. If this was C++ everything would also be an object...
-
-/* I have chosen to use a "client-server" approach to this. It would be easy to expand to multiplayer, and it also keeps
-   the actual logic of hit-checking and other stuff separate from the terminal user interface. I am more used to programming
-   in OO languages, but I think this is still a good way to go about the game */
-int main(/*TODO*/) {
-	{ // initializes the server from the configuration files
-		//{
-			// read board config
-			char* file = "board.txt";
-			boardFile = fopen(file, 'r');
-
-
-			int ships[MAX_SHIPS][12][3];
-			/*array of ships with the x and y of each block of the ship also if its hit (TODO use a byte long int).
-			  I though of using max(width, height) instead of 12, but I would have to malloc() it, and that would be way
-			  too much trouble.*/
-			//TODO this and ShipNames should be just pointers, and fillShips() would determine their length and return it.
-
-			int numOfShips = fillShips(ships, shipNames);
-			client_quit();
-			//TODO if I'm gonna remake this in C++, I should use dependancy injection so server.setShips(ships)
-		//}
-	//	{ // read missile file
-	//		missileFile = fopen(arg1, 'r');
-	//		missileType currentMissile;
-	//		// linked list missileType missiles;
-	//		while((missile = getNextMissileFromFile()) != MISSILE_EOF) {
-	//			missiles.push();
-	//		}
-	//		fclose(missileFile);
-	//	}
-
-		server_initialize(NULL, ships, numOfShips, width, height);
-	}
-
-
-	// I guess we have to set up some parts of the client, too
-	board = (char **)malloc(width * sizeof(char *));
-	for (int col = 0; col < width; col++)
-		board[col] = (char *)malloc(height * sizeof(char));
-	for (int i = 0; i < width; i++) {
-		for (int j = 0; j < height; j++) {
-			board[i][j] = '#';
-		}
-	}
-
-	while(true) { /* I know some people consider while(true) loops bad, because while(true) means that the loop shouldn't
-			 break. However, this loop doesn't really ever break, the program just exit():s when I call quit from
-			 here. quit() is also called from other places, so the while(true) loop seems appropriate here.
-			 Also I think having only the server initialization block, and then a really short and simple main menu
-			 block should be considered clean code */
-		switch(mainMenu()) {
-			case EXIT:
-				client_quit();
-				break;
-			case PLAY:
-				client_playGame(); //TODO separate main and client
-				break;
-			case MISSILES:
-				//printMissiles(missiles);
-				break;
-			case INVALID:
-				break;
-		}
-	}
-}
-
-char alphabet[26] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-                 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-                 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-                 'Y', 'Z'};
-
-void client_playGame() {
+bool client_playGame() {
 	static int attackColumn = -1;
 	static int attackRow = -1;
-
+	static int shotsDone = 0;
 	while(true) {
-
+		static int sunkShip = -1;
+		static int itersSinceSunk = 999;
 		printf("\033[2J\n");
-		if ((attackRow > -1) && (attackRow < height) && (attackColumn > -1) && (attackColumn < width)) {
+		if ((attackRow > -1) && (attackRow < client_height) && (attackColumn > -1) && (attackColumn < client_width)) {
 			static int result;
-			result = server_isHit(attackColumn, attackRow);
-			if (result == -2) {
+			result = server_hit(attackColumn, attackRow);
+			if (result == -1) {
 				board[attackColumn][attackRow] = '0';
-			} if (result >= 0) {
+			} else if (result >= 0) {
 				board[attackColumn][attackRow] = 'S'; // S for sunk
-				printf(" SHIP %s HAS BEEN SUNK", shipNames[result]);
+				sunkShip = result;
+				itersSinceSunk = 0;
 			} else {
 				board[attackColumn][attackRow] = 'X';
 			}
@@ -181,39 +42,54 @@ void client_playGame() {
 
 		{ // print the board
 			printf(":) ||");
-			for (int i = 0; i < width; i++) {
+			for (int i = 0; i < client_width; i++) {
 				printf(" %c |", alphabet[i]);
 			} printf("\n");
 			printf("---++");
-			for (int i = 0; i < width; i++) {
+			for (int i = 0; i < client_width; i++) {
 				printf("===+");
 			} printf("\n");
-			for (int row = 0; row < height; row++) {
+			for (int row = 0; row < client_height; row++) {
 				printf(" %d ||", row); // I want the first row to be zero, like its supposed to be
-				for (int col = 0; col < width; col++) {
-					printf(" %c |", board[col][row]);
+				for (int col = 0; col < client_width; col++) {
+					#ifndef MONO
+					printColorCode(board[col][row]);
+					#endif
+					#ifdef DEBUG
+					if (server_isShip(col, row)) {
+						printf("\033[1;35m");
+					}
+					#endif
+					printf(" %c ", board[col][row]);
+					printf("\033[0m");
+					printf("|");
 				} printf("\n");
 				printf("---++");
-				for (int i = 0; i < width; i++) {
+				for (int i = 0; i < client_width; i++) {
 					printf("---+");
 				} printf("\n");
 			}
 			printf("\n");
 		}
-
+		if (itersSinceSunk < 1) {
+			printf(" SHIP %s HAS BEEN SUNK\n\n", server_getShipName(sunkShip));
+		}
 		static char response[2];
 		response[0] = ' ';
 		response[1] = ' ';
-		printf("Enter next target :");
+		printf(" Shots : %d\n\n", shotsDone);
+		printf("Enter next target : ");
 		scanf("%s", response);
 		attackColumn = colToInt(response[0]);
 		attackRow = rowToInt(response[1]);
-
+		itersSinceSunk++;
+		shotsDone++;
 		usleep(10 * 1000);
 	}
+	return false;
 }
 
-enum menuOption mainMenu() {
+enum menuOption client_mainMenu() {
 	printf("\033[2J");
 	printf("         ________________________________\n");
 	printf("         | B  A  T  T  L  E  S  H  I  P |\n");
@@ -237,6 +113,25 @@ enum menuOption mainMenu() {
 			return INVALID;
 			break;
 	}
+}
+
+void printColorCode(char mark) {
+	switch(mark) {
+		case '#':
+			printf("\033[1;34m");
+			break;
+		case 'X':
+			printf("\033[0;31m");
+			break;
+		default:
+			printf("\033[0;32m");
+			break;
+	}
+}
+
+bool client_listMissiles() {
+	//TODO
+	return false;
 }
 
 int colToInt(char letter) {
@@ -274,3 +169,32 @@ int rowToInt(char digit) {
 			return -1;
 	}
 }
+
+
+/* Deallocate the board */
+void client_quit() {
+	for (int col = 0; col < client_width; col++)
+		free(board[col]);
+	free(board);
+}
+
+/* Allocate the board */
+bool client_initialize() {
+	client_width = server_getWidth();
+	client_height = server_getHeight();
+
+	board = (char **)malloc(client_width * sizeof(char *));
+	for (int col = 0; col < client_width; col++)
+		board[col] = (char *)malloc(client_height * sizeof(char));
+	for (int i = 0; i < client_width; i++) {
+		for (int j = 0; j < client_height; j++) {
+			board[i][j] = '#';
+		}
+	}
+	return false;
+}
+
+char alphabet[26] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+                 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+                 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+                 'Y', 'Z'};

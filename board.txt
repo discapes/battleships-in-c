@@ -1,4 +1,4 @@
-9,7
-D4 E 3 shipone
-A1 N 3 shiptwo
-C2 W 2 shipthree
+9,9
+E6 s 3 NullByte
+A1 N 3 SSASR
+C2 W 2 CPN
